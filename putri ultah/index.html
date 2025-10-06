@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Interactive Birthday Card</title>
+  <style>
+    body {
+      font-family: 'Poppins', sans-serif;
+      background: linear-gradient(135deg, #ffd1dc 0%, #ffe4ec 100%);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+      overflow: hidden;
+    }
+    .envelope {
+      width: 250px;
+      height: 150px;
+      background: #fff;
+      position: relative;
+      cursor: pointer;
+      border: 2px solid #ff7bac;
+      border-radius: 8px;
+      box-shadow: 0 10px 20px rgba(255, 105, 180, 0.3);
+      transition: transform 0.3s ease;
+    }
+    .envelope:hover {
+      transform: scale(1.05);
+    }
+    .flap {
+      position: absolute;
+      width: 100%;
+      height: 50%;
+      background: #ffb6c1;
+      top: 0;
+      clip-path: polygon(0 0, 100% 0, 50% 100%);
+    }
+    .message, .year-selection, .game, .final-message {
+      display: none;
+      text-align: center;
+      color: #d63384;
+      animation: fadeIn 0.6s ease forwards;
+    }
+    .year-selection button, .restart-btn {
+      background: #fff;
+      color: #ff7bac;
+      border: none;
+      padding: 10px 20px;
+      margin: 10px;
+      font-size: 1rem;
+      border-radius: 25px;
+      cursor: pointer;
+      transition: background 0.3s, transform 0.2s;
+    }
+    .year-selection button:hover, .restart-btn:hover {
+      background: #ffd6e0;
+      transform: scale(1.1);
+    }
+    .card {
+      width: 90%;
+      max-width: 450px;
+      background: rgba(255,255,255,0.5);
+      border-radius: 25px;
+      padding: 30px;
+      box-shadow: 0 4px 30px rgba(255,182,193,0.5);
+      backdrop-filter: blur(10px);
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(4, 60px);
+      justify-content: center;
+      gap: 10px;
+      margin-top: 20px;
+    }
+    .card-tile {
+      width: 60px;
+      height: 60px;
+      background: #fff;
+      border-radius: 10px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 1.5rem;
+      cursor: pointer;
+      color: transparent;
+      transition: background 0.3s, color 0.3s;
+      box-shadow: 0 4px 6px rgba(255,105,180,0.3);
+    }
+    .card-tile.flipped {
+      background: #ff7bac;
+      color: #fff;
+    }
+    .birthday-photo {
+      width: 200px;
+      height: 200px;
+      border-radius: 50%;
+      object-fit: cover;
+      margin: 20px auto;
+      box-shadow: 0 6px 15px rgba(255,105,180,0.4);
+      border: 4px solid #fff;
+    }
+    @keyframes fadeIn {
+      from {opacity: 0; transform: translateY(10px);}
+      to {opacity: 1; transform: translateY(0);}
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="envelope" id="envelope">
+      <div class="flap"></div>
+    </div>
+
+    <div class="message" id="message">
+      <h2>💌 Selamat Ulang Tahun! 💌</h2>
+      <p>Klik untuk membuka kejutan spesial!</p>
+    </div>
+
+    <div class="year-selection" id="year-selection">
+      <h2>Pilih Tahun Lahir Kamu 💖</h2>
+      <div>
+        <button>2007</button>
+        <button>2008</button>
+        <button>2009</button>
+        <button>2010</button>
+      </div>
+    </div>
+
+    <div class="game" id="game">
+      <h2>🎮 Memory Game Ulang Tahun 🎮</h2>
+      <div class="grid" id="grid"></div>
+    </div>
+
+    <div class="final-message" id="final-message">
+      <h2>🎉 Selamat Ulang Tahun! 🎉</h2>
+      <img src="putri.jpg" alt="Foto Ulang Tahun" class="birthday-photo">
+      <h3>Riwanti Putri</h3>
+      <p>Semoga panjang umur, sehat selalu, dan lancar rezeki cantikkkk, maaf kalo aku belum pernah ngerayain dede laa padahal mau sangat ngerayain dede belikan sesuatu maafin dede aku bikin dede marah teruss, maafin juga dede web nya kurang menarik dede, semangatt dede yaa sayang dede 💕</p>
+      <button class="restart-btn" onclick="restart()">Main Lagi</button>
+    </div>
+  </div>
+
+  <audio id="birthdayMusic" src="https://cdn.pixabay.com/download/audio/2022/03/15/audio_30f6e0bdb5.mp3?filename=happy-birthday-to-you-piano-12464.mp3"></audio>
+
+  <script>
+    const envelope = document.getElementById('envelope');
+    const message = document.getElementById('message');
+    const yearSelection = document.getElementById('year-selection');
+    const game = document.getElementById('game');
+    const grid = document.getElementById('grid');
+    const finalMessage = document.getElementById('final-message');
+    const music = document.getElementById('birthdayMusic');
+
+    let flipped = [];
+    let matched = 0;
+
+    envelope.addEventListener('click', () => {
+      envelope.style.display = 'none';
+      message.style.display = 'block';
+      music.play();
+      setTimeout(() => {
+        message.style.display = 'none';
+        yearSelection.style.display = 'block';
+      }, 2500);
+    });
+
+    document.querySelectorAll('.year-selection button').forEach(btn => {
+      btn.addEventListener('click', startGame);
+    });
+
+    function startGame() {
+      yearSelection.style.display = 'none';
+      game.style.display = 'block';
+      initGame();
+    }
+
+    function initGame() {
+      const emojis = ['🎂','🎈','🎁','🍰','💖','🌸','⭐','🎉'];
+      const tiles = [...emojis, ...emojis].sort(() => Math.random() - 0.5);
+      grid.innerHTML = '';
+      matched = 0;
+
+      tiles.forEach(symbol => {
+        const div = document.createElement('div');
+        div.className = 'card-tile';
+        div.textContent = symbol;
+        div.addEventListener('click', () => flipCard(div));
+        grid.appendChild(div);
+      });
+    }
+
+    function flipCard(card) {
+      if (card.classList.contains('flipped') || flipped.length === 2) return;
+      card.classList.add('flipped');
+      flipped.push(card);
+
+      if (flipped.length === 2) {
+        setTimeout(checkMatch, 600);
+      }
+    }
+
+    function checkMatch() {
+      const [a,b] = flipped;
+      if (a.textContent === b.textContent) {
+        matched += 2;
+        if (matched === 16) {
+          setTimeout(() => {
+            game.style.display = 'none';
+            finalMessage.style.display = 'block';
+          }, 500);
+        }
+      } else {
+        a.classList.remove('flipped');
+        b.classList.remove('flipped');
+      }
+      flipped = [];
+    }
+
+    function restart() {
+      finalMessage.style.display = 'none';
+      envelope.style.display = 'block';
+      music.pause();
+      music.currentTime = 0;
+    }
+  </script>
+</body>
+</html>
